@@ -11,7 +11,6 @@ class DataBaseManager():
         - db_url: строка подключения (например, 'sqlite:///mydatabase.db')
         """
         self.engine = create_engine(db_url, echo=True)
-        self.SessionLocal = sessionmaker(bind=self.engine)
     
     def execute_commit(self, command):
         with self.engine.connect() as session:
