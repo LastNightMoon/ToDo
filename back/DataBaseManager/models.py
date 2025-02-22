@@ -6,20 +6,20 @@ from datetime import date
 Base = declarative_base()
     
 class Users(Base):
-    __tablename__ = 'Users' 
+    __tablename__ = 'users' 
     id: int = Column(Integer, primary_key=True)
     login: str = Column(String)
     password: str = Column(String)
     
 class Groups(Base):
-    __tablename__ = 'Groups'
+    __tablename__ = 'groups'
     id: int = Column(Integer, primary_key=True)
     name: str = Column(String)
     user_id: int = Column(Integer)
 
 
 class Tasks(Base):
-    __tablename__ = 'Tasks'
+    __tablename__ = 'tasks'
     id: int = Column(Integer, primary_key=True)
     user_id: int = Column(Integer)
     name: str = Column(String)
