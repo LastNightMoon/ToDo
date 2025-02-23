@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from fastapi_sessions.backends.implementations import InMemoryBackend
 from fastapi_sessions.frontends.implementations import SessionCookie, CookieParameters
-from DataBaseManager.models import Users
+from utils.variable_environment import VarEnv
 
 class SessionData(BaseModel):
     login: str
@@ -18,7 +18,7 @@ cookie = SessionCookie(
     cookie_name="cookie",
     identifier="general_verifier",
     auto_error=True,
-    secret_key="DONOTUSE",
+    secret_key=VarEnv.SECRET_KEY,
     cookie_params=cookie_params,
 )
 backend = InMemoryBackend[UUID, SessionData]()
