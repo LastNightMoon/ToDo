@@ -35,6 +35,4 @@ async def create_session_user(response, **session_data) -> SessionData:
     data = SessionData(**session_data)
     await backend.create(session, data)
     cookie.attach_to_response(response, session)
-    print("dldkdkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
-
     return data

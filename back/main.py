@@ -1,58 +1,54 @@
-import uvicorn
-from fastapi import FastAPI, Depends, Request, Response
+from uuid import UUID
 
-from back.auntefication import SessionData, get_session_data, create_session_user, backend,cookie
-from utils.variable_environment import VarEnv
-from DataBaseManager.models import Users, Groups, Tasks
-from models import UserAuth, UserLogin
 import sqlalchemy
-from sqlalchemy.dialects.postgresql import insert
-from DataBaseManager import db
+import uvicorn
+from fastapi import FastAPI, Depends, Response
 from fastapi.responses import JSONResponse
-from utils.logger import Logger
-from uuid import UUID, uuid4
 
+from DataBaseManager import db
+from DataBaseManager.models import Users
+from back.auntefication import SessionData, get_session_data, create_session_user, backend, cookie
+from models import UserAuth, UserLogin
 
 app = FastAPI()
 
 
 @app.post("/register", response_class=JSONResponse)
-async def registerUser(item: UserAuth, response: Response):
+async def registerUser(item: UserAuth):
     if db.select(sqlalchemy.select(Users).where(Users.login == item.login)):
-        result = False
-        msg = "A user with this login already exists"
+        return JSONResponse(content={"result": False, "msg": "A user with this login already exists"}, status_code=200)
     elif not item.login or not item.password:
-        result = False
-        msg = "Login and password fields cannot be empty"
-    else:
-        result = True
-        msg = "Ok"
-        db.execute_commit(sqlalchemy.insert(Users).values(login=item.login, password=item.password))
-        user = db.select(sqlalchemy.select(Users).where(Users.login == item.login), db.any)
-        await create_session_user(response, id=user.id, login=item.login)
-    return JSONResponse(content={"result": result, "msg": msg}, status_code=200)
+        return JSONResponse(content={"result": False, "msg": "Login and password fields cannot be empty"},
+                            status_code=200)
+    response = JSONResponse(content={"result": True, "msg": "ok"}, status_code=200)
+    db.execute_commit(sqlalchemy.insert(Users).values(login=item.login, password=item.password))
+    user = db.select(sqlalchemy.select(Users).where(Users.login == item.login), db.any_)
+    await create_session_user(response, id=user.id, login=item.login)
+    return response
 
 
 @app.post("/login", response_class=JSONResponse)
-async def authenticate(item: UserLogin, response: Response):
-    result = True
+async def authenticate(item: UserLogin):
     if not item.login or not item.password:
         return JSONResponse(content={"result": False, "msg": "Login and password fields cannot be empty"},
                             status_code=200)
     user = db.select(
-        sqlalchemy.select(Users).where(sqlalchemy.and_(Users.login == item.login, Users.password == item.password)), db.any_)
+        sqlalchemy.select(Users).where(sqlalchemy.and_(Users.login == item.login, Users.password == item.password)),
+        db.any_)
     if not user:
-        result = False
-        msg = "The login or password entered is incorrect"
+        return JSONResponse(content={"result": False, "msg": "The login or password entered is incorrect"},
+                            status_code=200)
     else:
-        msg = "Ok"
-        session = uuid4()
-        data = SessionData(id=user.id, login=item.login)
-        await backend.create(session, data)
-        cookie.attach_to_response(response, session)
-        print("dldkdkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
-        # await create_session_user(response, id=user.id, login=item.login)
-    return JSONResponse(content={"result": result, "msg": msg}, status_code=200)
+        response = JSONResponse(content={"result": True, "msg": "ok"}, status_code=200)
+        await create_session_user(response, id=user.id, login=item.login)
+    return response
+
+
+@app.post("/logout")
+async def del_session(response: Response, session_id: UUID = Depends(cookie)):
+    await backend.delete(session_id)
+    cookie.delete_from_response(response)
+    return "ok"
 
 
 @app.get("/", response_class=JSONResponse)
