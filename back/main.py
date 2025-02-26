@@ -7,8 +7,8 @@ from fastapi.responses import JSONResponse
 
 from DataBaseManager import db
 from DataBaseManager.models import Users
-from auntefication import SessionData, get_session_data, create_session_user, backend, cookie
-from models import UserAuth, UserLogin, CreateTasks
+from back.auntefication import SessionData, get_session_data, create_session_user, backend, cookie
+from models import UserAuth, UserLogin
 
 app = FastAPI()
 
@@ -43,13 +43,6 @@ async def authenticate(item: UserLogin):
         await create_session_user(response, id=user.id, login=item.login)
     return response
 
-@app.post("/create_task", response_class=JSONResponse)
-async def createTask(item: CreateTasks, session_data: SessionData = Depends(get_session_data)):
-    if not item.name:
-        return JSONResponse(content={"result": False, "msg": "Task name cannot be empty"}, status_code=200)
-    
-    db.execute_commit(sqlalchemy.insert().values(name=item.name, user_id=session_data.id, closed=False))
-    return JSONResponse(content={"result": True, "msg": "Task created successfully"}, status_code=200)
 
 @app.post("/logout")
 async def del_session(response: Response, session_id: UUID = Depends(cookie)):
