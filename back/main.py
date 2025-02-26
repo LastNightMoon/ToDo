@@ -66,6 +66,5 @@ async def index(session_data: SessionData = Depends(get_session_data)):
     # навешивание этих аргументов уже значит проверку
     return session_data.dict()
 
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
