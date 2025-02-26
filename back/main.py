@@ -6,9 +6,9 @@ from fastapi import FastAPI, Depends, Response
 from fastapi.responses import JSONResponse
 
 from DataBaseManager import db
-from DataBaseManager.models import Users
-from back.auntefication import SessionData, get_session_data, create_session_user, backend, cookie
-from models import UserAuth, UserLogin
+from DataBaseManager.models import Users, Groups
+from auntefication import SessionData, get_session_data, create_session_user, backend, cookie
+from models import UserAuth, UserLogin, CreateGroups
 
 app = FastAPI()
 
@@ -43,6 +43,14 @@ async def authenticate(item: UserLogin):
         await create_session_user(response, id=user.id, login=item.login)
     return response
 
+@app.post("/create_groups", response_class=JSONResponse)
+async def create_group(item: CreateGroups, session_data: SessionData = Depends(get_session_data)):
+    user_id = session_data.id
+    if not item.name:
+        return JSONResponse(content={"result": False, "msg": "Group name cannot be empty"}, status_code=200)
+    
+    db.execute_commit(sqlalchemy.insert(Groups).values(name=item.name, user_id=user_id))
+    return JSONResponse(content={"result": True, "msg": "Task group created successfully"}, status_code=200)
 
 @app.post("/logout")
 async def del_session(response: Response, session_id: UUID = Depends(cookie)):
